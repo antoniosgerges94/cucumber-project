@@ -3,46 +3,55 @@ package com.qacart.todo.steps.factory;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
-
-import java.time.Duration;
 
 public class DriverFactory {
 
-    // ✅ Each thread gets its own WebDriver instance
-    private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
+    private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>();
 
     public static WebDriver initDriver() {
 
-        WebDriver driver;
+        String browser = System.getProperty("browser", "EDGE").toUpperCase();
 
-        String browser = System.getProperty("browser", "EDGE");
+        WebDriver webDriver;
 
-        WebDriver newDriver;
         switch (browser) {
+
             case "EDGE":
-                driver = new EdgeDriver();
+                EdgeOptions edgeOptions = new EdgeOptions();
+                edgeOptions.addArguments("--headless");
+                edgeOptions.addArguments("--no-sandbox");
+                edgeOptions.addArguments("--disable-dev-shm-usage");
+                edgeOptions.addArguments("--disable-gpu");
+
+                webDriver = new EdgeDriver(edgeOptions);
                 break;
+
             case "FIREFOX":
-                driver = new FirefoxDriver();
+                webDriver = new FirefoxDriver();
                 break;
+
             case "CHROME":
-                driver = new ChromeDriver();
+                webDriver = new ChromeDriver();
                 break;
+
             default:
                 throw new RuntimeException("Browser not supported: " + browser);
         }
 
-        driver.manage().window().maximize();
-        DriverFactory.driver.set(driver);
-        return driver;
+        driver.set(webDriver);
+        return webDriver;
     }
 
     public static WebDriver getDriver() {
-        return driver.get(); 
+        return driver.get();
     }
 
     public static void quitDriver() {
-
+        if (driver.get() != null) {
+            driver.get().quit();
+            driver.remove();
+        }
     }
 }
